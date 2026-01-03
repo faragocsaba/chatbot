@@ -42,7 +42,7 @@
             color: white;
             text-align: right;
         }
-        .model { /* Átneveztem 'bot'-ról 'model'-re, hogy passzoljon a Geminihez */
+        .model {
             margin-right: auto;
             background-color: #e9ecef;
             color: #333;
@@ -51,6 +51,9 @@
         .input-area {
             display: flex;
             gap: 10px;
+        }
+        .impressum {
+            padding: 15px 0px 0px 0px;
         }
         #user-input {
             flex-grow: 1;
@@ -91,6 +94,10 @@
     <div class="input-area">
         <input type="text" id="user-input" placeholder="Írd be az üzeneted..." onkeyup="if(event.key === 'Enter') sendMessage()">
         <button id="send-button" onclick="sendMessage()">Küldés</button>
+    </div>
+
+    <div class="impressum">
+        Az alkalmazást <a href="http://faragocsaba.hu">Faragó Csaba</a> készítette.
     </div>
 
     <script>

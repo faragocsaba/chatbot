@@ -1,0 +1,158 @@
+<!DOCTYPE html>
+<html lang="hu">
+<head>
+    <meta charset="UTF-8">
+    <title>Gemini Chatbot</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            max-width: 700px;
+            margin: 20px auto;
+            padding: 20px;
+            background-color: #f4f7f6;
+            border-radius: 8px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+        }
+        h1 {
+            color: #333;
+            border-bottom: 2px solid #007bff;
+            padding-bottom: 10px;
+            margin-bottom: 20px;
+        }
+        #chat-container {
+            border: 1px solid #ddd;
+            padding: 15px;
+            height: 450px;
+            overflow-y: scroll;
+            margin-bottom: 15px;
+            background-color: #fff;
+            border-radius: 5px;
+        }
+        .message {
+            margin-bottom: 15px;
+            padding: 10px 15px;
+            border-radius: 18px;
+            max-width: 80%;
+            word-wrap: break-word;
+            line-height: 1.5;
+        }
+        .user {
+            margin-left: auto;
+            background-color: #007bff;
+            color: white;
+            text-align: right;
+        }
+        .model { /* Átneveztem 'bot'-ról 'model'-re, hogy passzoljon a Geminihez */
+            margin-right: auto;
+            background-color: #e9ecef;
+            color: #333;
+            text-align: left;
+        }
+        .input-area {
+            display: flex;
+            gap: 10px;
+        }
+        #user-input {
+            flex-grow: 1;
+            padding: 12px;
+            box-sizing: border-box;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+            font-size: 16px;
+        }
+        #send-button {
+            padding: 12px 20px;
+            background-color: #28a745;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 16px;
+        }
+        #send-button:hover {
+            background-color: #218838;
+        }
+        /* Markdown formázások */
+        .model p { margin: 0 0 5px 0; }
+        .model strong { font-weight: bold; }
+        .model ul, .model ol { margin: 5px 0 10px 20px; padding: 0; }
+        .model li { margin-bottom: 5px; }
+    </style>
+</head>
+<body>
+    <h1>🤖 Gemini Chatbot</h1>
+
+    <div id="chat-container">
+        <div class="message model">
+            <p>Szia! Én egy Google Gemini alapú chatbot vagyok. Kérdezz tőlem valamit!</p>
+        </div>
+    </div>
+
+    <div class="input-area">
+        <input type="text" id="user-input" placeholder="Írd be az üzeneted..." onkeyup="if(event.key === 'Enter') sendMessage()">
+        <button id="send-button" onclick="sendMessage()">Küldés</button>
+    </div>
+
+    <script>
+        let conversation_history = [];
+
+        function sendMessage() {
+            const inputField = document.getElementById('user-input');
+            const userText = inputField.value.trim();
+            if (userText === "") return;
+
+            addMessage('user', userText);
+            conversation_history.push({
+                role: "user",
+                parts: [userText]
+            });
+
+            inputField.value = '';
+
+            fetch('/chat', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ history: conversation_history })
+            })
+            .then(response => response.json())
+            .then(data => {
+                let botResponse = data.response || data.error || "Hiba történt.";
+
+                let formattedResponse = botResponse
+                    .trim()
+                    .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
+                    .replace(/^\* (.*?)(?=\n|$)/gm, '<li>$1</li>')
+                    .replace(/^(?!<li>)(.+)$/gm, '<p>$1</p>')
+                    .replace(/<\/li>\n<p>/g, '</li><p>')
+                    .replace(/<p><\/p>/g, '');
+
+                addMessage('model', formattedResponse);
+
+                conversation_history.push({
+                    role: "model",
+                    parts: [botResponse]
+                });
+            })
+            .catch(error => {
+                console.error('Fetch error:', error);
+                addMessage('model', `Hálózati hiba: ${error.message}`);
+            });
+        }
+
+        function addMessage(sender, content) {
+            const chatContainer = document.getElementById('chat-container');
+            const messageDiv = document.createElement('div');
+            messageDiv.className = `message ${sender}`;
+
+            if (sender === 'model') {
+                messageDiv.innerHTML = content;
+            } else {
+                messageDiv.textContent = content;
+            }
+
+            chatContainer.appendChild(messageDiv);
+            chatContainer.scrollTop = chatContainer.scrollHeight;
+        }
+    </script>
+</body>
+</html>
